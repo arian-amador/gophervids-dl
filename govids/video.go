@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/rylio/ytdl"
 )
@@ -39,10 +40,12 @@ func (v *Video) Download(o string, debug bool) error {
 
 	vid, err := ytdl.GetVideoInfo(v.URL())
 	if err != nil {
-		return fmt.Errorf("Error | %s", err)
+		i := strings.Index(err.Error(), ":")
+		err := fmt.Errorf("Error | %s | %s | %s", err.Error()[i+1:], v.URL(), v.Title)
+		return err
 	}
 	if len(vid.Formats) == 0 {
-		return fmt.Errorf("Error | No videos found at %s", v.URL())
+		return fmt.Errorf("Error No videos found at %s", v.URL())
 	}
 
 	file, err := os.Create(o)
