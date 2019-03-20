@@ -39,7 +39,10 @@ func (v *Video) Download(o string, debug bool) error {
 
 	vid, err := ytdl.GetVideoInfo(v.URL())
 	if err != nil {
-		return err
+		return fmt.Errorf("Error | %s", err)
+	}
+	if len(vid.Formats) == 0 {
+		return fmt.Errorf("Error | No videos found at %s", v.URL())
 	}
 
 	file, err := os.Create(o)

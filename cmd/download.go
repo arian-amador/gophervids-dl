@@ -56,7 +56,7 @@ func main() {
 			ch <- struct{}{}
 			p := v.FullPath(out)
 			if err := v.Download(p, flagDebug); err != nil {
-				fmt.Errorf("%s | %s", err, v.Title)
+				fmt.Println(err)
 			}
 			<-ch
 		}(v)
