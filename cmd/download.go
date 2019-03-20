@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"sync"
 
 	gv "../govids"
@@ -12,26 +15,33 @@ var (
 	flagFile         string
 	flagOutput       string
 	flagMaxDownloads int
+	flagDebug        bool
 )
 
 func init() {
 	flag.StringVar(&flagFile, "file", "vids.json", "JSON file of all gophervids.com file")
 	flag.StringVar(&flagOutput, "output", "output", "Directory to store downloaded videos")
 	flag.IntVar(&flagMaxDownloads, "max", 5, "Maximum concurrent downloads to fetch")
+	flag.BoolVar(&flagDebug, "debug", false, "Show progress during download process")
 	flag.Parse()
 }
 
 func main() {
-	// Validates input json and output directory exist
-	in := gv.ValidatePath(flagFile)
-	out := gv.ValidatePath(flagOutput)
+	// Validate the JSON including the video listing exists
+	in, _ := filepath.Abs(flagFile)
+	if err := gv.ValidatePath(in); err != nil {
+		log.Fatal(err)
+	}
+
+	// Validate the output directory exists
+	out, _ := filepath.Abs(flagOutput)
+	if err := gv.ValidatePath(out); err != nil {
+		log.Fatal(err)
+	}
 
 	// Read JSON and build video listing
 	j := gv.ReadJSON(in)
 	videos := gv.NewVideos(j)
-
-	fmt.Println("Downloading", len(videos), "video(s)")
-	fmt.Println("------------------------")
 
 	// Used to process downloads concurrently
 	var wg sync.WaitGroup
@@ -41,16 +51,18 @@ func main() {
 	// Process downloads
 	for _, v := range videos {
 		go func(v gv.Video) {
+			defer wg.Done()
+
 			ch <- struct{}{}
-			v.Download(&wg, out)
+			p := v.FullPath(out)
+			if err := v.Download(p, flagDebug); err != nil {
+				fmt.Errorf("%s | %s", err, v.Title)
+			}
 			<-ch
 		}(v)
 	}
 
-	// Clean up
 	wg.Wait()
 	close(ch)
-
-	fmt.Println("------------------------")
-	fmt.Println("Finished downloading", len(videos), "video(s)")
+	os.Exit(0)
 }

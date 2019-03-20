@@ -1,31 +1,24 @@
 package govids
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 // ValidatePath helper to validate if a path exists
-func ValidatePath(p string) string {
-	v, err := filepath.Abs(p)
-	if err != nil {
-		log.Fatal(err)
+func ValidatePath(p string) error {
+	if _, err := os.Stat(p); os.IsNotExist(err) {
+		return err
 	}
 
-	if _, err := os.Stat(v); os.IsNotExist(err) {
-		log.Fatal(err)
-	}
-
-	return v
+	return nil
 }
 
 // ReadJSON process json video file and return array of Vidoes
 func ReadJSON(in string) []byte {
-	fmt.Println("Reading JSON")
-
 	jsonFile, err := os.Open(in)
 	if err != nil {
 		log.Fatal(err)
@@ -35,4 +28,19 @@ func ReadJSON(in string) []byte {
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
 	return byteValue
+}
+
+// Sanitize is used to remove special chars and trim a string
+func Sanitize(s string) string {
+	reg, err := regexp.Compile("[^a-zA-Z0-9\\s]+")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s = strings.Trim(s, " ")
+	s = reg.ReplaceAllString(s, "")
+	s = strings.Replace(s, " ", "-", -1)
+	s = strings.ToLower(s)
+
+	return s
 }

@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
-	"strings"
-	"sync"
 
 	"github.com/rylio/ytdl"
 )
@@ -22,6 +19,7 @@ type Video struct {
 // NewVideos returns listing of video structs
 func NewVideos(b []byte) []Video {
 	var videos []Video
+
 	if err := json.Unmarshal(b, &videos); err != nil {
 		log.Fatal("Invalid JSON: ", err)
 	}
@@ -30,31 +28,41 @@ func NewVideos(b []byte) []Video {
 }
 
 // Download uses ytdl to download and save a video
-func (v *Video) Download(wg *sync.WaitGroup, dir string) {
-	defer wg.Done()
-
-	title := v.Filename()
-	fullPath := v.FullPath(dir)
-	url := v.URL()
-
-	if _, err := os.Stat(fullPath); err == nil {
-		fmt.Printf("Exists | %s | %s\n", url, title)
-		return
+func (v *Video) Download(o string, debug bool) error {
+	if debug {
+		if _, err := os.Stat(o); err == nil {
+			return fmt.Errorf("Exists | %s | %s", v.URL(), v.Title)
+		} else {
+			fmt.Printf("Fetching | %s | %s \n", v.URL(), v.Title)
+		}
 	}
+
+	vid, err := ytdl.GetVideoInfo(v.URL())
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(o)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	vid.Download(vid.Formats[0], file)
+
+	return nil
+}
+
+// Author returns the videos channel name
+func (v *Video) Author() string {
+	url := v.URL()
 
 	vid, err := ytdl.GetVideoInfo(url)
 	if err != nil {
-		fmt.Printf("Failed to get video info for %s\n", url)
-		return
+		return ""
 	}
 
-	file, _ := os.Create(fullPath)
-	defer file.Close()
-
-	fmt.Printf("Fetching | %s | %s \n", url, title)
-	vid.Download(vid.Formats[0], file)
-
-	return
+	return vid.Author
 }
 
 // URL return the youtube url
@@ -64,19 +72,19 @@ func (v *Video) URL() string {
 
 // Filename returns a sanitized title used for the output filename
 func (v *Video) Filename() string {
-	reg, err := regexp.Compile("[^a-zA-Z0-9\\s]+")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	t := reg.ReplaceAllString(v.Title, "")
-	t = strings.ToLower(t)
-	t = strings.Replace(t, " ", "-", -1)
-
-	return t
+	return Sanitize(v.Title)
 }
 
 // FullPath returns a full output path to save the video
-func (v *Video) FullPath(dir string) string {
-	return fmt.Sprintf("%s/%s-%s.mp4", dir, v.Date, v.Filename())
+func (v *Video) FullPath(p string) string {
+	a := Sanitize(v.Author())
+
+	if a != "" {
+		p = fmt.Sprintf("%s/%s", p, a)
+		if err := ValidatePath(p); err != nil {
+			os.MkdirAll(p, os.ModePerm)
+		}
+	}
+
+	return fmt.Sprintf("%s/%s-%s.mp4", p, v.Date, v.Filename())
 }
