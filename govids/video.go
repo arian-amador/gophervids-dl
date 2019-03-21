@@ -86,11 +86,13 @@ func (v *Video) FullPath(p string) string {
 	a := Sanitize(v.Author())
 
 	if a != "" {
-		p = fmt.Sprintf("%s/%s", p, a)
+		p = p + string(os.PathSeparator) + a
 		if err := ValidatePath(p); err != nil {
 			os.MkdirAll(p, os.ModePerm)
 		}
 	}
 
-	return fmt.Sprintf("%s/%s-%s.mp4", p, v.Date, v.Filename())
+	p = p + string(os.PathSeparator) + v.Date + "-" + v.Filename()
+
+	return p
 }
