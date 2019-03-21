@@ -23,3 +23,6 @@ go build cmd/download.go
   -remote
         Get gophervids.com json listing
 ```
+## Contributing
+
+Feel free to enhance features by issuing pull-requests.
