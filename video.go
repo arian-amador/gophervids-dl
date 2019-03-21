@@ -33,9 +33,8 @@ func (v *Video) Download(o string, debug bool) error {
 	if debug {
 		if _, err := os.Stat(o); err == nil {
 			return fmt.Errorf("Exists | %s | %s", v.URL(), v.Title)
-		} else {
-			fmt.Printf("Fetching | %s | %s \n", v.URL(), v.Title)
 		}
+		fmt.Printf("Fetching | %s | %s \n", v.URL(), v.Title)
 	}
 
 	vid, err := ytdl.GetVideoInfo(v.URL())
