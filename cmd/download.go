@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -12,14 +14,20 @@ import (
 )
 
 var (
+	flagRemote       bool
 	flagFile         string
 	flagOutput       string
 	flagMaxDownloads int
 	flagDebug        bool
 )
 
+const (
+	remoteURL = "http://gophervids.appspot.com/static/vids.json"
+)
+
 func init() {
 	flag.StringVar(&flagFile, "file", "vids.json", "JSON file of all gophervids.com file")
+	flag.BoolVar(&flagRemote, "remote", false, "Get gophervids.com json listing")
 	flag.StringVar(&flagOutput, "output", "output", "Directory to store downloaded videos")
 	flag.IntVar(&flagMaxDownloads, "max", 5, "Maximum concurrent downloads to fetch")
 	flag.BoolVar(&flagDebug, "debug", false, "Show progress during download process")
@@ -27,6 +35,12 @@ func init() {
 }
 
 func main() {
+	if flagRemote {
+		if err := download(flagFile, remoteURL); err != nil {
+			log.Fatal("Unable to download video json file")
+		}
+	}
+
 	// Validate the JSON including the video listing exists
 	in, _ := filepath.Abs(flagFile)
 	if err := gv.ValidatePath(in); err != nil {
@@ -65,4 +79,21 @@ func main() {
 	wg.Wait()
 	close(ch)
 	os.Exit(0)
+}
+
+func download(f string, url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	out, err := os.Create(f)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
 }
