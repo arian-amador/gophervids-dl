@@ -1,13 +1,16 @@
 # gophervids-dl
+
 Go utility to download and store all of the videos listed on http://gophervids.appspot.com
 
 ## Usage
+
 ```bash
-go get github.com/arian-amador/gophervids-dl
+go get -t github.com/arian-amador/gophervidsdl
 go build cmd/download.go
 ```
 
 ## Flags
+
 ```bash
   -debug
         Show progress during download process
