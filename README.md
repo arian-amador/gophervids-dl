@@ -1,4 +1,4 @@
-# Gopher Video Downloader [![Build Status](https://api.travis-ci.org/arian-amador/gophervidsdl.svg)](https://travis-ci.org/arian-amador/gophervidsdl)
+# Gopher Video Downloader [![Build Status](https://api.travis-ci.org/arian-amador/gophervidsdl.svg)](https://travis-ci.org/arian-amador/gophervidsdl) [![Go Report Card](https://goreportcard.com/badge/github.com/arian-amador/gophervidsdl)](https://goreportcard.com/report/github.com/arian-amador/gophervidsdl)
 
 Go utility to download and store all of the videos listed on http://gophervids.appspot.com
 
