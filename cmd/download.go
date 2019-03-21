@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	gv "../govids"
+	gv "github.com/arian-amador/gophervidsdl"
 )
 
 var (

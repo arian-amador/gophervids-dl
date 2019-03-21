@@ -1,4 +1,4 @@
-package govids
+package gophervidsdl
 
 import (
 	"encoding/json"
