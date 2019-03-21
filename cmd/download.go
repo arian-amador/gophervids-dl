@@ -78,6 +78,10 @@ func main() {
 
 	wg.Wait()
 	close(ch)
+
+	if flagDebug {
+		fmt.Println("Finished downloading", len(videos), "video(s)")
+	}
 	os.Exit(0)
 }
 
