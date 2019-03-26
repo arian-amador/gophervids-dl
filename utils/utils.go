@@ -23,8 +23,8 @@ func Sanitize(s string) string {
 		log.Fatal(err)
 	}
 
-	s = strings.Trim(s, " ")
 	s = reg.ReplaceAllString(s, "")
+	s = strings.Trim(s, " ")
 	s = strings.Replace(s, " ", "-", -1)
 	s = strings.ToLower(s)
 
