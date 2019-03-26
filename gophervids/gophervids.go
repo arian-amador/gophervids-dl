@@ -1,13 +1,22 @@
-package gophervidsdl
+package gophervids
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/arian-amador/gophervidsdl/utils"
 	"github.com/rylio/ytdl"
+)
+
+const (
+	remoteURL = "http://gophervids.appspot.com/static/vids.json"
 )
 
 // Video describes structure for a video entry
@@ -18,14 +27,50 @@ type Video struct {
 }
 
 // NewVideos returns listing of video structs
-func NewVideos(b []byte) []Video {
-	var videos []Video
+func NewLocalJSON(f string) ([]Video, error) {
+	in, _ := filepath.Abs(f)
+	if err := utils.ValidatePath(in); err != nil {
+		return nil, err
+	}
 
-	if err := json.Unmarshal(b, &videos); err != nil {
+	jFile, err := os.Open(in)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer jFile.Close()
+
+	j, _ := ioutil.ReadAll(jFile)
+	var videos []Video
+	if err := json.Unmarshal(j, &videos); err != nil {
 		log.Fatal("Invalid JSON: ", err)
 	}
 
-	return videos
+	return videos, nil
+}
+
+func NewRemoteJSON() ([]Video, error) {
+	resp, err := http.Get(remoteURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("Got status %d", resp.StatusCode)
+	}
+
+	var videos []Video
+	dec := json.NewDecoder(resp.Body)
+
+	for {
+		if err := dec.Decode(&videos); err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+	}
+
+	return videos, nil
 }
 
 // Download uses ytdl to download and save a video
@@ -77,16 +122,16 @@ func (v *Video) URL() string {
 
 // Filename returns a sanitized title used for the output filename
 func (v *Video) Filename() string {
-	return Sanitize(v.Title)
+	return utils.Sanitize(v.Title)
 }
 
 // FullPath returns a full output path to save the video
 func (v *Video) FullPath(p string) string {
-	a := Sanitize(v.Author())
+	a := utils.Sanitize(v.Author())
 
 	if a != "" {
 		p = p + string(os.PathSeparator) + a
-		if err := ValidatePath(p); err != nil {
+		if err := utils.ValidatePath(p); err != nil {
 			os.MkdirAll(p, os.ModePerm)
 		}
 	}

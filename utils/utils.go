@@ -1,7 +1,6 @@
-package gophervidsdl
+package utils
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -15,19 +14,6 @@ func ValidatePath(p string) error {
 	}
 
 	return nil
-}
-
-// ReadJSON process json video file and return array of Vidoes
-func ReadJSON(in string) []byte {
-	jsonFile, err := os.Open(in)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer jsonFile.Close()
-
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-
-	return byteValue
 }
 
 // Sanitize is used to remove special chars and trim a string

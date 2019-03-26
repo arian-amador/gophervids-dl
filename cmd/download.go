@@ -3,14 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 
-	gv "github.com/arian-amador/gophervidsdl"
+	gv "github.com/arian-amador/gophervidsdl/gophervids"
+	"github.com/arian-amador/gophervidsdl/utils"
 )
 
 var (
@@ -19,10 +18,6 @@ var (
 	flagOutput       string
 	flagMaxDownloads int
 	flagDebug        bool
-)
-
-const (
-	remoteURL = "http://gophervids.appspot.com/static/vids.json"
 )
 
 func init() {
@@ -34,29 +29,7 @@ func init() {
 	flag.Parse()
 }
 
-func main() {
-	if flagRemote {
-		if err := download(flagFile, remoteURL); err != nil {
-			log.Fatal("Unable to download video json file")
-		}
-	}
-
-	// Validate the JSON including the video listing exists
-	in, _ := filepath.Abs(flagFile)
-	if err := gv.ValidatePath(in); err != nil {
-		log.Fatal(err)
-	}
-
-	// Validate the output directory exists
-	out, _ := filepath.Abs(flagOutput)
-	if err := gv.ValidatePath(out); err != nil {
-		log.Fatal(err)
-	}
-
-	// Read JSON and build video listing
-	j := gv.ReadJSON(in)
-	videos := gv.NewVideos(j)
-
+func download(videos []gv.Video, out string) {
 	// Used to process downloads concurrently
 	var wg sync.WaitGroup
 	ch := make(chan struct{}, flagMaxDownloads)
@@ -79,25 +52,35 @@ func main() {
 	wg.Wait()
 	close(ch)
 
+	return
+}
+
+func main() {
+	var videos []gv.Video
+	var err error
+
+	out, _ := filepath.Abs(flagOutput)
+	if err := utils.ValidatePath(out); err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	if flagRemote {
+		videos, err = gv.NewRemoteJSON()
+	} else {
+		videos, err = gv.NewLocalJSON(flagFile)
+	}
+
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(2)
+	}
+
+	download(videos, out)
+
 	if flagDebug {
 		fmt.Println("Finished downloading", len(videos), "video(s)")
 	}
+
 	os.Exit(0)
-}
-
-func download(f string, url string) error {
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	out, err := os.Create(f)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, resp.Body)
-	return err
 }
