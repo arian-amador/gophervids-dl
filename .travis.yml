@@ -1,12 +1,6 @@
 language: go
 go:
   - '1.11'
-<<<<<<< HEAD
 before_install: go get -u github.com/arian-amador/gophervidsdl
 go_import_path: github.com/arian-amador/gophervidsdl
-script: go build cmd/gophervidsdl.go
-=======
-before_install: go get -u github.com/arian-amador/gophervidsdl/...
-go_import_path: github.com/arian-amador/gophervidsdl
-script: go build cmd/download.go
->>>>>>> 181e0151803b8d1af7e490cab92f3a40c2403b97
+script: go build
