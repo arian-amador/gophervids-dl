@@ -5,8 +5,7 @@ Go utility to download and store all of the videos listed on http://gophervids.a
 ## Usage
 
 ```bash
-go get -t github.com/arian-amador/gophervidsdl
-go build cmd/download.go
+go install github.com/arian-amador/gophervidsdl
 ```
 
 ## Flags
