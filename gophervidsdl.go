@@ -41,8 +41,7 @@ func download(videos []gv.Video, out string) {
 			defer wg.Done()
 
 			ch <- struct{}{}
-			p := v.FullPath(out)
-			if err := v.Download(p, flagDebug); err != nil {
+			if err := v.Download(flagOutput, flagDebug); err != nil {
 				fmt.Println(err)
 			}
 			<-ch
@@ -59,6 +58,7 @@ func main() {
 	var videos []gv.Video
 	var err error
 
+	// validate output directory
 	out, _ := filepath.Abs(flagOutput)
 	if err := utils.ValidatePath(out); err != nil {
 		log.Fatal(err)

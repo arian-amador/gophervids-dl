@@ -26,7 +26,7 @@ type Video struct {
 	Title string `json:"title"`
 }
 
-// NewVideos returns listing of video structs
+// NewLocalJSON returns listing of video structs
 func NewLocalJSON(f string) ([]Video, error) {
 	in, _ := filepath.Abs(f)
 	if err := utils.ValidatePath(in); err != nil {
@@ -48,6 +48,7 @@ func NewLocalJSON(f string) ([]Video, error) {
 	return videos, nil
 }
 
+// NewRemoteJSON returns listing of video structs
 func NewRemoteJSON() ([]Video, error) {
 	resp, err := http.Get(remoteURL)
 	if err != nil {
@@ -74,14 +75,8 @@ func NewRemoteJSON() ([]Video, error) {
 }
 
 // Download uses ytdl to download and save a video
-func (v *Video) Download(o string, debug bool) error {
-	if debug {
-		if _, err := os.Stat(o); err == nil {
-			return fmt.Errorf("Exists | %s | %s", v.URL(), v.Title)
-		}
-		fmt.Printf("Fetching | %s | %s \n", v.URL(), v.Title)
-	}
-
+func (v *Video) Download(outDir string, debug bool) error {
+	// Get YT Video/Info
 	vid, err := ytdl.GetVideoInfo(v.URL())
 	if err != nil {
 		i := strings.Index(err.Error(), ":")
@@ -92,6 +87,16 @@ func (v *Video) Download(o string, debug bool) error {
 		return fmt.Errorf("Error No videos found at %s", v.URL())
 	}
 
+	// Build/Validate output path exists
+	o := v.FullPath(outDir, vid.Author)
+	if debug {
+		if _, err := os.Stat(o); err == nil {
+			return fmt.Errorf("Exists | %s | %s", v.URL(), v.Title)
+		}
+		fmt.Printf("Fetching | %s | %s \n", v.URL(), v.Title)
+	}
+
+	// Download video
 	file, err := os.Create(o)
 	if err != nil {
 		return err
@@ -101,18 +106,6 @@ func (v *Video) Download(o string, debug bool) error {
 	vid.Download(vid.Formats[0], file)
 
 	return nil
-}
-
-// Author returns the videos channel name
-func (v *Video) Author() string {
-	url := v.URL()
-
-	vid, err := ytdl.GetVideoInfo(url)
-	if err != nil {
-		return ""
-	}
-
-	return vid.Author
 }
 
 // URL return the youtube url
@@ -126,9 +119,8 @@ func (v *Video) Filename() string {
 }
 
 // FullPath returns a full output path to save the video
-func (v *Video) FullPath(p string) string {
-	a := utils.Sanitize(v.Author())
-
+func (v *Video) FullPath(p, a string) string {
+	a = utils.Sanitize(a)
 	if a != "" {
 		p = p + string(os.PathSeparator) + a
 		if err := utils.ValidatePath(p); err != nil {
@@ -136,7 +128,12 @@ func (v *Video) FullPath(p string) string {
 		}
 	}
 
-	p = p + string(os.PathSeparator) + v.Date + "-" + v.Filename()
+	d := v.Date
+	if d == "" {
+		d = "00"
+	}
+
+	p = p + string(os.PathSeparator) + d + "-" + v.Filename()
 
 	return p
 }
