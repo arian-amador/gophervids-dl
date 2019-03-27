@@ -3,4 +3,3 @@ go:
   - '1.11'
 before_install: go get -u github.com/arian-amador/gophervidsdl
 go_import_path: github.com/arian-amador/gophervidsdl
-script: go build
